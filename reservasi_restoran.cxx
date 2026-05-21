@@ -460,3 +460,294 @@ void sortingReservasi() {
     pressEnter();
 }
 
+// 4. SEARCH (Sequential Search)
+void searchReservasi() {
+    clearScreen();
+    header("SEARCH RESERVASI");
+    cout << "  Cari berdasarkan:" << endl;
+    cout << "  1. Nama Pelanggan" << endl;
+    cout << "  2. Kode Meja" << endl;
+    cout << "  3. Kode Booking" << endl;
+    cout << "  4. Tanggal" << endl;
+    garisTipis();
+    cout << "  Pilih : ";
+    string pStr; getline(cin, pStr);
+    int pilih = atoi(pStr.c_str());
+
+    bool ketemu = false;
+
+    auto cetakHasil = [&](int i) {
+        cout << "  Booking : " << formatBooking(data[i].id) << endl;
+        cout << "  Meja    : " << data[i].kodeMeja << endl;
+        cout << "  Tanggal : " << data[i].tanggal << endl;
+        cout << "  Jam     : " << data[i].jam << endl;
+        cout << "  Nama    : " << data[i].namaPelanggan << endl;
+        garisTipis();
+        ketemu = true;
+    };
+
+    if (pilih == 1) {
+        cout << "  Nama Pelanggan : ";
+        string nama; getline(cin, nama);
+        cout << "\n  Hasil pencarian:\n"; garisTipis();
+        for (int i = 0; i < jumlah; i++)
+            if (data[i].aktif && data[i].namaPelanggan.find(nama) != string::npos)
+                cetakHasil(i);
+
+    } else if (pilih == 2) {
+        cout << "  Kode Meja : ";
+        string kode; getline(cin, kode);
+        kode = toUpper(kode);
+        cout << "\n  Hasil pencarian:\n"; garisTipis();
+        for (int i = 0; i < jumlah; i++)
+            if (data[i].aktif && data[i].kodeMeja == kode)
+                cetakHasil(i);
+
+    } else if (pilih == 3) {
+        cout << "  Kode Booking (angka): ";
+        string idStr; getline(cin, idStr);
+        int id = atoi(idStr.c_str());
+        int idx = cariById(id);
+        cout << "\n  Hasil pencarian:\n"; garisTipis();
+        if (idx != -1) cetakHasil(idx);
+
+    } else if (pilih == 4) {
+        string tgl = inputTanggalValid("Tanggal");
+        cout << "\n  Hasil pencarian:\n"; garisTipis();
+        for (int i = 0; i < jumlah; i++)
+            if (data[i].aktif && data[i].tanggal == tgl)
+                cetakHasil(i);
+
+    } else {
+        cout << "\n  [!] Pilihan tidak valid." << endl;
+        pressEnter(); return;
+    }
+
+    if (!ketemu) cout << "\n  [!] Data tidak ditemukan." << endl;
+    pressEnter();
+}
+
+// 5. DELETE (dengan reset ID)
+void deleteReservasi() {
+    clearScreen();
+    header("DELETE RESERVASI");
+    cout << "  Kode Booking yang dihapus (angka): ";
+    string idStr; getline(cin, idStr);
+    int id = atoi(idStr.c_str());
+
+    int idx = cariById(id);
+    if (idx == -1) {
+        cout << "\n  [!] ID " << id << " tidak ditemukan." << endl;
+        pressEnter(); return;
+    }
+
+    cout << "\n  Data yang akan dihapus:" << endl; garisTipis();
+    cout << "  Booking : " << formatBooking(data[idx].id) << endl;
+    cout << "  Meja    : " << data[idx].kodeMeja << endl;
+    cout << "  Tanggal : " << data[idx].tanggal << endl;
+    cout << "  Jam     : " << data[idx].jam << endl;
+    cout << "  Nama    : " << data[idx].namaPelanggan << endl;
+    garisTipis();
+    cout << "  Konfirmasi hapus? (y/n): ";
+    string k; getline(cin, k);
+
+    if (k == "y" || k == "Y") {
+        string booking = formatBooking(data[idx].id);
+        data[idx].aktif = false;
+
+        // Reset dan kompres ID setelah hapus
+        resetIds();
+
+        cout << "\n  [OK] Reservasi " << booking << " berhasil dihapus." << endl;
+        cout << "  [OK] Kode booking telah direset & diperbarui." << endl;
+    } else {
+        cout << "\n  [!] Penghapusan dibatalkan." << endl;
+    }
+    pressEnter();
+}
+
+// 6. EDIT
+void editReservasi() {
+    clearScreen();
+    header("EDIT RESERVASI");
+    cout << "  Kode Booking yang diedit (angka): ";
+    string idStr; getline(cin, idStr);
+    int id = atoi(idStr.c_str());
+
+    int idx = cariById(id);
+    if (idx == -1) {
+        cout << "\n  [!] ID " << id << " tidak ditemukan." << endl;
+        pressEnter(); return;
+    }
+
+    cout << "\n  Data saat ini:" << endl; garisTipis();
+    cout << "  Meja    : " << data[idx].kodeMeja << endl;
+    cout << "  Tanggal : " << data[idx].tanggal << endl;
+    cout << "  Jam     : " << data[idx].jam << endl;
+    cout << "  Nama    : " << data[idx].namaPelanggan << endl;
+    garisTipis();
+    cout << "  (Biarkan kosong = tidak diubah)\n" << endl;
+
+    // Edit meja
+    string inputMeja;
+    cout << "  Kode Meja baru [" << data[idx].kodeMeja << "]: ";
+    getline(cin, inputMeja);
+    if (!inputMeja.empty()) {
+        inputMeja = toUpper(inputMeja);
+        if (!mejaValid(inputMeja)) {
+            cout << "  [!] Kode meja tidak valid!" << endl; pressEnter(); return;
+        }
+        if (!mejaTersedia(inputMeja, data[idx].tanggal, data[idx].jam, data[idx].id)) {
+            cout << "  [!] Meja " << inputMeja << " sudah dipesan pada jam tersebut!" << endl; pressEnter(); return;
+        }
+        data[idx].kodeMeja = inputMeja;
+    }
+
+    // Edit tanggal
+    string inputTanggal;
+    cout << "  Tanggal baru [" << data[idx].tanggal << "]: ";
+    getline(cin, inputTanggal);
+    if (!inputTanggal.empty()) {
+        if (!tanggalValid(inputTanggal)) {
+            cout << "  [!] Format tanggal tidak valid! (DD/MM/YYYY, hari 01-31, bulan 01-12)" << endl;
+            pressEnter(); return;
+        }
+        if (!mejaTersedia(data[idx].kodeMeja, inputTanggal, data[idx].jam, data[idx].id)) {
+            cout << "  [!] Meja sudah dipesan pada tanggal & jam tersebut!" << endl; pressEnter(); return;
+        }
+        data[idx].tanggal = inputTanggal;
+    }
+
+    // Edit jam
+    string inputJam;
+    cout << "  Jam baru [" << data[idx].jam << "]: ";
+    getline(cin, inputJam);
+    if (!inputJam.empty()) {
+        if (!jamValid(inputJam)) {
+            cout << "  [!] Format jam tidak valid! (HH:MM, jam 00-23, menit 00-59)" << endl;
+            pressEnter(); return;
+        }
+        if (!mejaTersedia(data[idx].kodeMeja, data[idx].tanggal, inputJam, data[idx].id)) {
+            cout << "  [!] Meja sudah dipesan pada jam tersebut!" << endl; pressEnter(); return;
+        }
+        data[idx].jam = inputJam;
+    }
+
+    // Edit nama
+    string inputNama;
+    cout << "  Nama baru [" << data[idx].namaPelanggan << "]: ";
+    getline(cin, inputNama);
+    if (!inputNama.empty()) data[idx].namaPelanggan = inputNama;
+
+    simpanKeFile();
+    cout << "\n  [OK] Data berhasil diperbarui!" << endl;
+    pressEnter();
+}
+
+// LOGIN
+bool login() {
+    int attempt = 0;
+    while (attempt < MAX_LOGIN) {
+        clearScreen();
+        garisTebal();
+        cout << "    SISTEM RESERVASI RESTORAN" << endl;
+        cout << "    Selamat datang! Silahkan login." << endl;
+        garisTebal();
+
+        if (attempt > 0) {
+            cout << "  [!] Username atau password salah!" << endl;
+            cout << "      Kesempatan tersisa: " << (MAX_LOGIN - attempt) << endl;
+            garisTipis();
+        }
+
+        string user, pass;
+        cout << "  username : ";
+        getline(cin, user);
+        cout << "  password : ";
+        getline(cin, pass);
+
+        if (user == ADMIN_USER && pass == ADMIN_PASS) {
+            clearScreen();
+            garisTebal();
+            cout << "    LOGIN BERHASIL" << endl;
+            garisTebal();
+            cout << "  Selamat datang, " << user << "!" << endl;
+            cout << "  Tekan Enter untuk masuk ke menu...";
+            cin.get();
+            return true;
+        }
+        attempt++;
+    }
+
+    clearScreen();
+    garisTebal();
+    cout << "    AKSES DITOLAK" << endl;
+    garisTebal();
+    cout << "  [X] Anda telah gagal login " << MAX_LOGIN << " kali." << endl;
+    cout << "  [X] Program ditutup secara otomatis." << endl;
+    garisTebal();
+    cout << "  Tekan Enter untuk keluar...";
+    cin.get();
+    return false;
+}
+
+// MAIN
+int main() {
+    muatDariFile();
+    if (!login()) return 1;
+
+    clearScreen();
+    garisTebal();
+    cout << "    SISTEM RESERVASI RESTORAN" << endl;
+    garisTebal();
+    cout << "  Database : " << FILE_DB << endl;
+    cout << "  Records  : " << jumlah << " reservasi dimuat" << endl;
+    cout << "  Meja     : 1A-1C (Seksi 1) | 2A-2C (Seksi 2) | 3A-3C (Seksi 3)" << endl;
+    garisTebal();
+    cout << "\n  Tekan Enter untuk mulai...";
+    cin.get();
+
+    string menuStr;
+    int menu;
+
+    do {
+        clearScreen();
+        garisTebal();
+        cout << "         MENU UTAMA" << endl;
+        garisTebal();
+        cout << "  1. Input Reservasi" << endl;
+        cout << "  2. Output Reservasi" << endl;
+        cout << "  3. Sorting Reservasi" << endl;
+        cout << "  4. Search Reservasi" << endl;
+        cout << "  5. Delete Reservasi" << endl;
+        cout << "  6. Edit Reservasi" << endl;
+        cout << "  7. Keluar" << endl;
+        garisTebal();
+        cout << "  DB: " << FILE_DB << "  |  Records: " << jumlah << endl;
+        garisTebal();
+        cout << "  Masukkan Menu : ";
+        getline(cin, menuStr);
+        menu = atoi(menuStr.c_str());
+
+        switch (menu) {
+            case 1: inputReservasi();   break;
+            case 2: outputReservasi();  break;
+            case 3: sortingReservasi(); break;
+            case 4: searchReservasi();  break;
+            case 5: deleteReservasi();  break;
+            case 6: editReservasi();    break;
+            case 7:
+                clearScreen();
+                garisTebal();
+                cout << "  Terima kasih! Data tersimpan di " << FILE_DB << endl;
+                garisTebal();
+                break;
+            default:
+                cout << "\n  [!] Menu tidak valid.\n";
+                cin.get();
+        }
+
+    } while (menu != 7);
+
+    return 0;
+}
